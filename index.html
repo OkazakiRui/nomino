@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="favicons/favicon.ico" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="favicons/apple-touch-icon-180x180-precomposed.png"
+    />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/ress.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <title>nomino</title>
+  </head>
+  <body>
+    <div id="app">
+      <header v-show="!main.goods">
+        <div class="header">
+          <div id="headerHome" class="header__home" v-if="header.home">
+            <button
+              class="header__home__searchBtn"
+              @click="changePage('home','sell')"
+            >
+              何をお探しですか？
+            </button>
+            <button
+              :class="main.home ? 'header__home__favoriteBtn' : 'header__home__favoriteBtn__true'"
+              @click="main.home = !main.home,
+              main.favorite = !main.favorite"
+            ></button>
+            <button
+              class="header__home__notificationBtn"
+              @click="changePage('home','notification')"
+            ></button>
+          </div>
+          <!-- home end -->
+
+          <div id="headerSell" class="header__sell" v-if="header.sell">
+            <button
+              class="header__crossBtn header__sell__crossBtn"
+              @click="changePage('sell','home')"
+            ></button>
+            <input
+              type="text"
+              placeholder="キーワードから探す"
+              class="header__sell__search"
+            />
+          </div>
+          <!-- cell end -->
+
+          <div id="headerSearch" class="header__search" v-if="header.search">
+            <button
+              class="header__search__crossBtn header__crossBtn"
+              @click="changePage('search','home'),
+              addPhotoCount = 0,
+              newItemImg.splice(0)"
+            ></button>
+            <h1 class="header__title">探し物情報を入力</h1>
+          </div>
+          <!-- search end -->
+
+          <div
+            id="headerNotification"
+            class="header__notification"
+            v-if="header.notification"
+          >
+            <h1 class="header__title">お知らせ</h1>
+          </div>
+          <!-- notification end -->
+
+          <div id="headerMypage" class="header__mypage" v-if="header.mypage">
+            <h1 class="header__title">マイページ</h1>
+          </div>
+          <!-- mypage end -->
+        </div>
+      </header>
+
+      <main>
+        <div class="main">
+          <!-- ホーム -->
+          <div id="mainHome" class="main__home" v-if="main.home">
+            <div
+              class="observer"
+              v-for="item,index in items"
+              @click="itemClick"
+            >
+              <div class="main__home__item" @click="selectItemName = index">
+                <img :src="item.img[0]" class="main__home__img" />
+                <p v-text="sliceBytes(item)" class="main__home__itemText"></p>
+                <p
+                  v-text="item.price === -1 ? '価格提案希望' : item.price.toLocaleString() + '円' "
+                  class="main__home__price"
+                ></p>
+                <img
+                  :src="item.favorite ? 'img/svg/favorite_true_24px.svg' :
+                'img/svg/favorite_24px.svg'"
+                  class="main__home__favorite"
+                />
+              </div>
+            </div>
+
+            <!-- 探し物ボタン -->
+            <button
+              class="main__home__btn"
+              @click="changePage('home','search')"
+            >
+              探し物
+            </button>
+          </div>
+
+          <!-- 売る -->
+          <div id="mainSell" class="main__sell" v-if="main.sell">
+            <div class="main__sell__category whiteBase whiteBase__input">
+              <p>カテゴリで探す</p>
+              <select class="whiteBase__select">
+                <template v-for="cate in category">
+                  <option :value="cate">{{cate}}</option>
+                </template>
+              </select>
+            </div>
+
+            <div class="whiteBaseTitle">
+              <p class="whiteBaseTitle__text">検索履歴</p>
+              <div class="main__sell__log whiteBase">
+                <p>検索履歴はありません</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 探し物 -->
+          <div id="mainSearch" class="main__search" v-if="main.search">
+            <!-- 写真 -->
+            <div class="whiteBaseTitle">
+              <p class="whiteBaseTitle__text">商品写真</p>
+              <input
+                type="file"
+                accept="image/*"
+                :id="'photoFile' +
+              inputNumber"
+                style="display: none"
+                v-for="inputNumber in 5"
+                @change="inputImg($event)"
+              />
+              <div class="whiteBase main__search__photo">
+                <button
+                  :class="btnNumber === addPhotoCount + 1 ? 'main__search__photo__add' : '' "
+                  v-for="btnNumber in 5"
+                  @click="addFile(btnNumber)"
+                >
+                  <img
+                    class="main__search__photo__img"
+                    :src="newItemImg[btnNumber-1]"
+                    v-if="newItemImg.length >= btnNumber"
+                  />
+                </button>
+              </div>
+            </div>
+            <!-- 商品情報 -->
+            <div class="whiteBaseTitle">
+              <p class="whiteBaseTitle__text">商品情報</p>
+              <input
+                type="text"
+                placeholder="商品名（必須）"
+                class="whiteBase main__search__name"
+                id="itemName"
+              />
+
+              <div class="whiteBase__border"></div>
+
+              <div class="whiteBase whiteBase__input">
+                <p>商品のカテゴリ</p>
+                <select class="whiteBase__select" id="itemCategory">
+                  <template v-for="cate in category">
+                    <option :value="cate">{{cate}}</option>
+                  </template>
+                </select>
+              </div>
+            </div>
+            <!-- 商品詳細 -->
+            <div class="whiteBaseTitle">
+              <p class="whiteBaseTitle__text">商品情報</p>
+
+              <div class="whiteBase whiteBase__input">
+                <p>商品の状態</p>
+                <select class="whiteBase__select" id="itemState">
+                  <template v-for="state in itemState">
+                    <option :value="state">{{state}}</option>
+                  </template>
+                </select>
+              </div>
+
+              <div class="whiteBase__border"></div>
+
+              <textarea
+                class="whiteBase whiteBase__textarea"
+                cols="30"
+                rows="10"
+                placeholder="商品説明（任意 1000文字）
+
+例：目立つ汚れがなければ新品同様の価格で買い取ります。"
+                id="itemDescription"
+              ></textarea>
+            </div>
+            <!-- priceボタン -->
+            <div class="main__search__priceBtns">
+              <button
+                class="main__search__priceBtn"
+                :class="priceBtn ? 'main__search__priceBtn__select': ''"
+                @click="priceBtn = true"
+              >
+                買取価格を付ける
+              </button>
+
+              <button
+                class="main__search__priceBtn"
+                :class="priceBtn ? '': 'main__search__priceBtn__select'"
+                @click="priceBtn = false"
+              >
+                あとで価格を決める
+              </button>
+            </div>
+            <!-- button end -->
+
+            <!-- ↓ v-if -->
+            <div class="main__search__price" v-if="priceBtn">
+              <div class="whiteBaseTitle">
+                <p class="whiteBaseTitle__text">買取価格</p>
+
+                <div class="whiteBase whiteBase__text">
+                  <p>買取価格</p>
+                  <p class="whiteBase__select">
+                    <input
+                      type="number"
+                      id="itemPrice"
+                      class="whiteBase__select"
+                      @change="changePrice"
+                      min="300"
+                      step="100"
+                      placeholder="0"
+                    />円
+                  </p>
+                </div>
+
+                <div class="whiteBase__border"></div>
+
+                <div class="main__search__receipt whiteBase whiteBase__text">
+                  <div class="main__search__calc">
+                    <p>取引手数料（10%）</p>
+                    <p id="itemPriceFee">0円</p>
+                  </div>
+                  <div class="main__search__calc">
+                    <p>相手に支払われる金額</p>
+                    <p id="itemPricePayment">0円</p>
+                  </div>
+                </div>
+
+                <div class="whiteBase__border"></div>
+
+                <div class="whiteBase whiteBase__input">
+                  <p>取引金額相談</p>
+                  <select class="whiteBase__select" id="itemPriceCut">
+                    <template v-for="select in priceCut">
+                      <option :value="select">{{select}}</option>
+                    </template>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <!-- 金額相談 end -->
+
+            <div class="main__search__after" v-if="!priceBtn">
+              <p class="main__search__after__title">このまま出品できます</p>
+              <p class="main__search__after__subTitle">後で価格を付ける流れ</p>
+
+              <div class="main__search__after__steps">
+                <p class="main__search__after__step">STEP 1</p>
+                <p class="main__search__after__text">
+                  商品画面から<strong>売却希望者に買取価格を提案</strong>してもらいます。
+                </p>
+              </div>
+
+              <div class="main__search__after__steps">
+                <p class="main__search__after__step">STEP 2</p>
+                <p class="main__search__after__text">
+                  <strong>提案された価格を参考</strong
+                  >に商品画面で買取価格を決めることができます。
+                </p>
+              </div>
+            </div>
+
+            <button class="main__search__btn" @click="newItemCreate">
+              逆出品する
+            </button>
+          </div>
+
+          <!-- お知らせ -->
+          <div
+            id="mainNotification"
+            class="main__notification"
+            v-if="main.notification"
+          >
+            <div class="main__notification__btns">
+              <button
+                :class="notification === 0 ?  'main__notification__btn__select' : 'main__notification__btn'"
+                @click="notification = 0"
+              >
+                みんなへ
+              </button>
+              <button
+                :class="notification === 1 ?  'main__notification__btn__select' : 'main__notification__btn'"
+                @click="notification = 1"
+              >
+                あなたへ
+              </button>
+              <button
+                :class="notification === 2 ?  'main__notification__btn__select' : 'main__notification__btn'"
+                @click="notification = 2"
+              >
+                やること
+              </button>
+            </div>
+
+            <div v-if="notification === 0">
+              <div
+                class="main__notification__history whiteBase whiteBase__input"
+              >
+                <p>利用規約改正のお知らせ</p>
+                <p class="main__notification__history__date">4日前</p>
+              </div>
+            </div>
+            <div v-if="notification === 1">
+              <div
+                class="main__notification__history whiteBase whiteBase__input"
+              >
+                <p>今ならプロフィール設定で500円分のポイントもらえる！</p>
+                <p class="main__notification__history__date">2日前</p>
+              </div>
+
+              <div class="whiteBase__noneBorder"></div>
+
+              <div
+                class="main__notification__history whiteBase whiteBase__input"
+              >
+                <p>ログイン通知</p>
+                <p class="main__notification__history__date">6日前</p>
+              </div>
+            </div>
+            <div v-if="notification === 2">
+              <div
+                class="main__notification__history whiteBase whiteBase__input"
+              >
+                <p>プロフィールを変更してみよう！</p>
+                <p class="main__notification__history__date">21日前</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- マイページ -->
+          <div id="mainMypage" class="main__mypage" v-if="main.mypage">
+            <div class="main__mypage__profile">
+              <img
+                :src="userProfile.user0.img"
+                :alt="userProfile.user0.name"
+                class="main__mypage__profile__img"
+              />
+              <p class="main__mypage__profile__name">
+                {{userProfile.user0.name}}
+              </p>
+            </div>
+
+            <div class="main__mypage__btns">
+              <button class="main__mypage__btn">取引履歴</button>
+              <button
+                class="main__mypage__btn"
+                @click="changePage('mypage','search')"
+              >
+                探し物
+              </button>
+              <button
+                class="main__mypage__btn"
+                @click="changePage('mypage','home'), main.home=false, main.favorite=true"
+              >
+                いいね
+              </button>
+            </div>
+
+            <div class="main__mypage__other">
+              <div class="whiteBase whiteBase__input">
+                <p>取引の流れ</p>
+              </div>
+              <div class="whiteBase__noneBorder"></div>
+              <div class="whiteBase whiteBase__input">
+                <p>よくある質問</p>
+              </div>
+              <div class="whiteBase__noneBorder"></div>
+              <div class="whiteBase whiteBase__input">
+                <p>お問い合わせ</p>
+              </div>
+              <div class="whiteBase__noneBorder"></div>
+              <div class="whiteBase whiteBase__input">
+                <p>利用規約</p>
+              </div>
+              <div class="whiteBase__noneBorder"></div>
+              <div class="whiteBase whiteBase__input">
+                <p>プライバシーポリシー</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 商品ページ -->
+          <div id="mainGoods" class="main__goods" v-if="main.goods">
+            <button class="main__goods__close" @click="itemClose"></button>
+
+            <div class="main__goods__imgs">
+              <img
+                :src="items[selectItemName].img[itemImgCount]"
+                :alt="items[selectItemName].name"
+              />
+              <button
+                class="main__goods__imgs__leftbtn"
+                @click="changeItemImg(selectItemName,-1)"
+              ></button>
+              <button
+                class="main__goods__imgs__rightbtn"
+                @click="changeItemImg(selectItemName,1)"
+              ></button>
+
+              <div class="main__goods__imgs__display">
+                <button
+                  :class="itemImgCount + 1 === number ? 'main__goods__imgs__select' : '' "
+                  v-for="number in this.items[selectItemName].img.length"
+                  @click="itemImgCount = number-1"
+                ></button>
+              </div>
+            </div>
+
+            <p class="main__goods__name whiteBase">
+              {{items[selectItemName].name}}
+            </p>
+
+            <div class="main__goods__various whiteBase">
+              <p
+                class="main__goods__price"
+                v-text="items[selectItemName].price === -1 ? '価格提案希望' : items[selectItemName].price.toLocaleString() + '円' "
+              ></p>
+
+              <div class="main__goods__right">
+                <button
+                  class="main__goods__favorite"
+                  @click="items[selectItemName].favorite = items[selectItemName].favorite === 0 ? 1 : 0"
+                >
+                  <img
+                    :src="items[selectItemName].favorite === 1 ? 'img/svg/favorite_true_24px.svg' : 'img/svg/favorite_24px.svg' "
+                  />
+                  <p class="main__goods__favorite__text">
+                    {{items[selectItemName].totalFavorite +
+                    items[selectItemName].favorite}}
+                  </p>
+                </button>
+                <p
+                  class="main__goods__priceCut"
+                  v-if="items[selectItemName].priceCut == 1"
+                >
+                  {{items[selectItemName].priceCut === 1 ? "値上げ交渉あり" :
+                  "値上げ交渉なし" }}
+                </p>
+              </div>
+            </div>
+
+            <div class="main__goods__description whiteBaseTitle">
+              <p class="whiteBaseTitle__text">商品の説明</p>
+              <p
+                class="main__goods__description__text"
+                v-html="items[selectItemName].description"
+              ></p>
+            </div>
+
+            <div class="main__goods__data whiteBaseTitle">
+              <p class="whiteBaseTitle__text">商品の情報</p>
+              <div class="main__goods__data__category whiteBase">
+                <p>カテゴリ</p>
+                <p>{{category[items[selectItemName].category]}}</p>
+              </div>
+              <div class="whiteBase__border"></div>
+              <div class="main__goods__data__category whiteBase">
+                <p>希望する商品の状態</p>
+                <p>{{itemState[items[selectItemName].state]}}</p>
+              </div>
+            </div>
+
+            <div class="main__goods__hostUser whiteBaseTitle">
+              <p class="whiteBaseTitle__text">出品者</p>
+              <div
+                class="main__goods__hostUser__profile whiteBase whiteBase__input"
+              >
+                <figure class="main__goods__hostUser__img">
+                  <img :src="userProfile[items[selectItemName].hostUser].img" />
+                </figure>
+                <p>{{userProfile[items[selectItemName].hostUser].name}}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- favorite -->
+          <div id="mainHome" class="main__home" v-if="main.favorite">
+            <div
+              class="observer"
+              v-for="item,index in items"
+              @click="itemClick"
+            >
+              <div
+                class="main__home__item"
+                @click="selectItemName = index"
+                v-if="item.favorite===1"
+              >
+                <img :src="item.img[0]" class="main__home__img" />
+                <p v-text="sliceBytes(item)" class="main__home__itemText"></p>
+                <p
+                  v-text="item.price === -1 ? '価格提案希望' : item.price.toLocaleString() + '円' "
+                  class="main__home__price"
+                ></p>
+                <img
+                  :src="item.favorite ? 'img/svg/favorite_true_24px.svg' :
+                'img/svg/favorite_24px.svg'"
+                  class="main__home__favorite"
+                />
+              </div>
+            </div>
+
+            <!-- 探し物ボタン -->
+            <button
+              class="main__home__btn"
+              @click="changePage('home','search')"
+            >
+              探し物
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <div class="footer">
+          <div class="footer__base" v-show="!main.goods">
+            <template v-for="button in footer">
+              <div class="footer__base__btn" @click="footerChangePage(button)">
+                <img
+                  :src="button.select ? button.trueIcon : button.icon"
+                  class="footer__base__ico"
+                />
+                <p
+                  :class="button.select ? 'footer__base__name footer__base__name__true' : 'footer__base__name'"
+                  v-text="button.name"
+                ></p>
+              </div>
+            </template>
+          </div>
+          <!-- 商品画面 -->
+          <div class="footer__goods" v-if="main.goods">
+            <div class="footer__goods__btns">
+              <button
+                class="footer__goods__btn"
+                @click="items[selectItemName].favorite = items[selectItemName].favorite === 0 ? 1 : 0"
+              >
+                <img
+                  :src="items[selectItemName].favorite === 1 ? 'img/svg/favorite_true_24px.svg' : 'img/svg/favorite_24px.svg' "
+                />
+                いいね
+              </button>
+              <button class="footer__goods__btn">
+                <img src="img/svg/comment_24px.svg" alt="" />
+                コメント
+              </button>
+            </div>
+            <button class="footer__goods__message">取引に進む</button>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script src="js/vue.js"></script>
+    <script src="js/script.js"></script>
+  </body>
+</html>
